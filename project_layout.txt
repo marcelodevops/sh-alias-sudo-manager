@@ -1,0 +1,11 @@
+bash-alias-sudo-manager/
+├── bash_alias_sudo_manager/
+│ ├── __init__.py
+│ └── cli.py
+├── tests/
+│ └── test_cli.py
+├── pyproject.toml
+├── setup.py
+├── README.md
+├── .gitignore
+└── Makefile

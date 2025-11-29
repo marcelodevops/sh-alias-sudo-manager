@@ -1,141 +1,113 @@
 #!/usr/bin/env python3
-
-"""
-Python CLI utility to manage:
-- Bash aliases in ~/.bashrc
-- Environment exports in ~/.bashrc
-- Safe sudoers updates using visudo
-
-Usage examples:
-  tool.py alias add ll "ls -l"
-  tool.py alias remove ll
-  tool.py export add JAVA_HOME "/usr/lib/jvm/java-21"
-  tool.py sudoers add "marcelo ALL=(ALL) NOPASSWD: /usr/bin/systemctl"
-"""
-
 import argparse
 import os
 import subprocess
 from pathlib import Path
 
-BASHRC = Path.home() / ".bashrc"
+# Detect shell rc file dynamically (bash or zsh)
+SHELL = os.environ.get("SHELL", "bash")
+SHELL_NAME = Path(SHELL).name
+# Determine rc file for bash, zsh, or fish
+if SHELL_NAME == "zsh":
+    RC_FILE = Path.home() / ".zshrc"
+elif SHELL_NAME == "fish":
+    RC_FILE = Path.home() / ".config/fish/config.fish"
+else:
+    RC_FILE = Path.home() / ".bashrc"
+RC_FILE = Path.home() / (".zshrc" if SHELL_NAME == "zsh" else ".bashrc")
 SUDOERS_TMP = "/tmp/sudoers_edit"
 
 
-def ensure_bashrc():
+def ensure_rc():
+    if not RC_FILE.exists():
+        RC_FILE.touch()
     if not BASHRC.exists():
         BASHRC.touch()
 
 
 def add_alias(name, command):
-    ensure_bashrc()
-    line = f"alias {name}='{command}'\n"
-    with open(BASHRC, "a") as f:
+    ensure_rc()
+    line = f"alias {name}='{command}'"
+    with open(RC_FILE, "a") as f:
         f.write(line)
-    print(f"Alias added: {line.strip()}")
 
 
 def remove_alias(name):
-    ensure_bashrc()
-    lines = []
-    with open(BASHRC) as f:
+    ensure_rc()
+    with open(RC_FILE) as f:
         lines = f.readlines()
-    with open(BASHRC, "w") as f:
+    with open(RC_FILE, "w") as f:
         for line in lines:
             if not line.strip().startswith(f"alias {name}="):
                 f.write(line)
-    print(f"Alias removed: {name}")
 
 
 def add_export(var, value):
-    ensure_bashrc()
-    line = f"export {var}={value}\n"
-    with open(BASHRC, "a") as f:
+    ensure_rc()
+    line = f"export {var}={value}"
+    with open(RC_FILE, "a") as f:
         f.write(line)
-    print(f"Export added: {line.strip()}")
 
 
 def remove_export(var):
-    ensure_bashrc()
-    lines = []
-    with open(BASHRC) as f:
+    ensure_rc()
+    with open(RC_FILE) as f:
         lines = f.readlines()
-    with open(BASHRC, "w") as f:
+    with open(RC_FILE, "w") as f:
         for line in lines:
             if not line.strip().startswith(f"export {var}="):
                 f.write(line)
-    print(f"Export removed: {var}")
 
 
 def sudoers_add(entry):
-    # Write current sudoers to temp
     subprocess.run(["sudo", "cp", "/etc/sudoers", SUDOERS_TMP], check=True)
-
-    # Append entry
     with open(SUDOERS_TMP, "a") as f:
-        f.write(f"\n{entry}\n")
-
-    # Validate with visudo
+        f.write(f"{entry}")
     result = subprocess.run(["sudo", "visudo", "-c", "-f", SUDOERS_TMP])
     if result.returncode == 0:
         subprocess.run(["sudo", "cp", SUDOERS_TMP, "/etc/sudoers"], check=True)
-        print("Sudoers updated successfully.")
-    else:
-        print("Error: sudoers entry invalid. No changes were made.")
 
 
 def main():
     parser = argparse.ArgumentParser(description="Manage bash aliases, exports, and sudoers safely.")
     sub = parser.add_subparsers(dest="cmd")
 
-    # Alias
     alias = sub.add_parser("alias")
     alias_sub = alias.add_subparsers(dest="action")
-
     alias_add = alias_sub.add_parser("add")
     alias_add.add_argument("name")
     alias_add.add_argument("command")
-
     alias_rm = alias_sub.add_parser("remove")
     alias_rm.add_argument("name")
 
-    # Export
     export = sub.add_parser("export")
     exp_sub = export.add_subparsers(dest="action")
-
     exp_add = exp_sub.add_parser("add")
     exp_add.add_argument("var")
     exp_add.add_argument("value")
-
     exp_rm = exp_sub.add_parser("remove")
     exp_rm.add_argument("var")
 
-    # Sudoers
+    apply = sub.add_parser("apply", help="Reload shell configuration")
+
     sudo = sub.add_parser("sudoers")
     sudo_add = sudo.add_subparsers(dest="action").add_parser("add")
     sudo_add.add_argument("entry")
 
     args = parser.parse_args()
-
     if args.cmd == "alias":
-        if args.action == "add":
-            add_alias(args.name, args.command)
-        elif args.action == "remove":
-            remove_alias(args.name)
-
+        if args.action == "add": add_alias(args.name, args.command)
+        elif args.action == "remove": remove_alias(args.name)
     elif args.cmd == "export":
-        if args.action == "add":
-            add_export(args.var, args.value)
-        elif args.action == "remove":
-            remove_export(args.var)
-
+        if args.action == "add": add_export(args.var, args.value)
+        elif args.action == "remove": remove_export(args.var)
+    elif args.cmd == "apply":
+        # Reload current shell rc file
+        subprocess.run([SHELL, "-c", f"source {RC_FILE}"], check=False)
     elif args.cmd == "sudoers":
-        if args.action == "add":
-            sudoers_add(args.entry)
-
-    else:
-        parser.print_help()
+        if args.action == "add": sudoers_add(args.entry)
 
 
 if __name__ == "__main__":
     main()
+
