@@ -30,6 +30,7 @@ SUDOERS_PATH = Path(os.environ.get("BASM_SUDOERS_PATH", "/etc/sudoers"))
 # Backup directory
 BACKUP_DIR = Path(os.environ.get("BASM_BACKUP_DIR", "/tmp"))
 
+
 def ensure_rc():
     if not RC_FILE.exists():
         RC_FILE.parent.mkdir(parents=True, exist_ok=True)
@@ -37,6 +38,7 @@ def ensure_rc():
 
 
 ### -- Alias functions ---------------------------------------------------------
+
 
 def add_alias(name: str, command: str):
     ensure_rc()
@@ -65,6 +67,7 @@ def remove_alias(name: str):
 
 
 ### -- Export functions --------------------------------------------------------
+
 
 def add_export(var: str, value: str):
     ensure_rc()
@@ -96,6 +99,7 @@ def remove_export(var: str):
 
 
 ### -- Sudoers functions -------------------------------------------------------
+
 
 def _copy_sudoers_to_temp() -> Path:
     tmp = Path(tempfile.mktemp(prefix="sudoers_"))
@@ -147,6 +151,7 @@ def sudoers_remove(pattern: str):
 
 
 ### -- Backup & Restore --------------------------------------------------------
+
 
 def backup(rc: bool = True, sudoers: bool = True) -> dict:
     """
@@ -203,8 +208,11 @@ def restore(rc: bool = True, sudoers: bool = True) -> dict:
 
 ### -- CLI wiring --------------------------------------------------------------
 
+
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Manage shell aliases, exports, and sudoers safely.")
+    parser = argparse.ArgumentParser(
+        description="Manage shell aliases, exports, and sudoers safely."
+    )
     sub = parser.add_subparsers(dest="cmd")
 
     # alias
@@ -241,12 +249,28 @@ def build_parser() -> argparse.ArgumentParser:
 
     # backup/restore
     back = sub.add_parser("backup", help="Backup RC file and/or sudoers to backup dir")
-    back.add_argument("--no-rc", action="store_false", dest="rc", help="Don't backup RC file")
-    back.add_argument("--no-sudoers", action="store_false", dest="sudoers", help="Don't backup sudoers")
+    back.add_argument(
+        "--no-rc", action="store_false", dest="rc", help="Don't backup RC file"
+    )
+    back.add_argument(
+        "--no-sudoers",
+        action="store_false",
+        dest="sudoers",
+        help="Don't backup sudoers",
+    )
 
-    restore_p = sub.add_parser("restore", help="Restore RC file and/or sudoers from backup dir")
-    restore_p.add_argument("--no-rc", action="store_false", dest="rc", help="Don't restore RC file")
-    restore_p.add_argument("--no-sudoers", action="store_false", dest="sudoers", help="Don't restore sudoers")
+    restore_p = sub.add_parser(
+        "restore", help="Restore RC file and/or sudoers from backup dir"
+    )
+    restore_p.add_argument(
+        "--no-rc", action="store_false", dest="rc", help="Don't restore RC file"
+    )
+    restore_p.add_argument(
+        "--no-sudoers",
+        action="store_false",
+        dest="sudoers",
+        help="Don't restore sudoers",
+    )
 
     return parser
 
@@ -256,23 +280,32 @@ def main(argv: Optional[list[str]] = None):
     args = parser.parse_args(argv)
 
     if args.cmd == "alias":
-        if args.action == "add": add_alias(args.name, args.command)
-        elif args.action == "remove": remove_alias(args.name)
-        elif args.action == "list": list_aliases()
+        if args.action == "add":
+            add_alias(args.name, args.command)
+        elif args.action == "remove":
+            remove_alias(args.name)
+        elif args.action == "list":
+            list_aliases()
 
     elif args.cmd == "export":
-        if args.action == "add": add_export(args.var, args.value)
-        elif args.action == "remove": remove_export(args.var)
-        elif args.action == "list": list_exports()
+        if args.action == "add":
+            add_export(args.var, args.value)
+        elif args.action == "remove":
+            remove_export(args.var)
+        elif args.action == "list":
+            list_exports()
 
     elif args.cmd == "apply":
         # this will spawn a shell to source the rc; may not affect current process
         subprocess.run([SHELL, "-c", f"source {RC_FILE}"], check=False)
 
     elif args.cmd == "sudoers":
-        if args.action == "add": sudoers_add(args.entry)
-        elif args.action == "remove": sudoers_remove(args.pattern)
-        elif args.action == "list": sudoers_list()
+        if args.action == "add":
+            sudoers_add(args.entry)
+        elif args.action == "remove":
+            sudoers_remove(args.pattern)
+        elif args.action == "list":
+            sudoers_list()
 
     elif args.cmd == "backup":
         backup(rc=args.rc, sudoers=args.sudoers)

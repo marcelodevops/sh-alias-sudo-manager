@@ -7,7 +7,7 @@ setup(
     py_modules=["sh_alias_sudo_manager"],
     entry_points={
         "console_scripts": [
-        "basmgr=sh_alias_sudo_manager:main",
+            "basmgr=sh_alias_sudo_manager:main",
         ],
     },
     author="Marcelo",
