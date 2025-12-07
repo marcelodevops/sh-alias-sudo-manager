@@ -7,15 +7,20 @@ import pytest
 
 MODULE = "sh_alias_sudo_manager.cli"
 
+
 def run(args, env=None):
     cmd = [sys.executable, "-m", MODULE] + args
-    proc = subprocess.run(cmd, capture_output=True, env=env or os.environ.copy(), text=True)
+    proc = subprocess.run(
+        cmd, capture_output=True, env=env or os.environ.copy(), text=True
+    )
     return proc
+
 
 def test_help():
     result = run(["--help"])
     assert result.returncode == 0
     assert "usage" in result.stdout.lower()
+
 
 def test_alias_add_list_remove(tmp_path, monkeypatch):
     rc_file = tmp_path / "rc_test"
@@ -46,6 +51,7 @@ def test_alias_add_list_remove(tmp_path, monkeypatch):
     # Confirm removed
     r = run(["alias", "list"], env=env)
     assert "greet" not in r.stdout
+
 
 def test_export_add_list_remove(tmp_path):
     rc_file = tmp_path / "rc_test"
