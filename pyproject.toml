@@ -1,16 +1,34 @@
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "bash-alias-sudo-manager"
 version = "0.1.0"
-authors = [
-    { name = "Marcelo" }
-]
-description = "CLI tool to manage bash aliases, exports, and sudoers safely"
+description = "Safely manage shell aliases, exports, and sudoers entries."
 readme = "README.md"
-requires-python = ">=3.8"
+authors = [
+  { name = "Marcelo", email = "you@example.com" }
+]
+license = { text = "MIT" }
+requires-python = ">=3.9"
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: POSIX :: Linux",
+]
 
-[project.scripts]
-basmgr = "sh_alias_sudo_manager:main"
+[project.urls]
+"Source" = "https://example.com/your/repo"
+
+# [project.dependencies]
+
+# no runtime dependencies
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.0",
+  "flake8>=6.0",
+  "build",
+  "twine"
+]
